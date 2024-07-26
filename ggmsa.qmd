@@ -1,0 +1,76 @@
+---
+title: "Visualization of Multiple sequence alignment (MSA)"
+format: html
+editor: visual
+---
+
+#Install packages
+```{r}
+install.packages("ggmsa")
+install.packages("BiocManager")
+BiocManager::install("ggmsa")
+BiocManager::install("Biostrings")
+Biostrings::readAAStringSet
+BiocManager::install("msa")
+install.packages("seqinr")
+```
+
+```{r}
+system.file("tex", "texshade.sty", package="msa")
+```
+
+#Load libraries
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(msa)
+library(ggmsa)
+library(seqinr)
+library(Biostrings)
+```
+
+#Multiple sequence alignment (MSA)
+```{r}
+# Specify the directory containing the fasta files
+fasta_dir <- "DTU-Master-Thesis-2024/ggmsa_input"  # Replace with your folder path
+
+# List all fasta files in the directory
+fasta_files <- list.files(path = fasta_dir, pattern = "\\.fasta$", full.names = TRUE)
+
+# Loop through each fasta file
+for (fasta_file in fasta_files) {
+  
+  # Read the sequences from the fasta file
+  prot_sequences <- readAAStringSet(fasta_file)
+  
+  # Perform the multiple sequence alignment
+  alignment <- msa(prot_sequences, type = "protein", gapOpening = -2, gapExtension = -1)
+  
+  # Turn the alignment into a suitable format for ggmsa plot
+  aligned_sequences <- as.character(alignment)
+  
+  # Make alignment plot
+  alignment_plot <- ggmsa::ggmsa(aligned_sequences, 
+                                 start = NULL, end = NULL, 
+                                 color = "Chemistry_AA",
+                                 font = "DroidSansMono",
+                                 char_width = 0.5,
+                                 consensus_views = 0, 
+                                 disagreement = 1, 
+                                 use_dot = 1,
+                                 seq_name = TRUE,
+                                 ignore_gaps = FALSE,
+                                 border = "white",
+                                 ref = names(prot_sequences[1])) +
+                    theme(text = element_text(size = 6))
+  
+  # Print the alignment plot
+  print(alignment_plot)
+  
+  # Save plot in pdf
+  output_filename <- paste0("ggmsa_output/", sub(".fasta", "", basename(fasta_file)), ".pdf")
+  ggsave(filename = output_filename, plot = alignment_plot, width = 10, height = 5)
+}
+
+
+```
