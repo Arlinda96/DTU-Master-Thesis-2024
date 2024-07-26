@@ -1,0 +1,89 @@
+---
+title: "Peptide distribution across proteins of B.burgdorferi and B.valaisiana"
+format: html
+editor: visual
+---
+
+#Load libraries
+```{r}
+#| echo: true
+#| include: false
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+library(purrr)
+library(ggridges)
+```
+
+#Load dataset with all the proteins for both species
+```{r}
+data <- read_excel("burg_val_proteins.xlsx")
+```
+
+#Dataset preparation for geom_col plot
+```{r}
+# Initialize an empty data frame to store the protein sequence information
+protein_seq <- data.frame(Position = integer(), Count = integer(), ID = character(), Species = character(), Group = character(), stringsAsFactors = FALSE)
+
+# Iterate over each row in the dataset
+for (i in 1:nrow(data)) {
+  # Extract information from the current row
+  start_pos <- data$Start_Position[i]
+  end_pos <- data$End_Position[i]
+  id <- data$ID[i]
+  species <- data$Species[i]
+  group <- data$Group[i]
+  
+  # Create a vector to represent the protein sequence with the length of the protein
+  protein_length <- data$Protein_Length[i]
+  protein_sequence <- rep(0, protein_length)
+  
+  # Update the protein sequence for each peptide
+  protein_sequence[start_pos:end_pos] <- protein_sequence[start_pos:end_pos] + 1
+  
+  # Combine the protein sequence information with ID and Species
+  protein_seq <- rbind(protein_seq, data.frame(Position = 1:protein_length, Count = protein_sequence, ID = id, Species = species, Group = group))
+}
+
+# Set Position column to be numeric
+protein_seq$Position <- as.numeric(protein_seq$Position)
+
+# Aggregate the count of peptides for each position, ID, and Species
+protein_seq <- aggregate(Count ~ Position + ID + Species + Group, data = protein_seq, FUN = sum)
+
+# Order the dataset by ID and Position
+protein_seq <- protein_seq[order(protein_seq$ID, protein_seq$Position), ]
+
+
+```
+
+#Peptide distribution for B.burgdorferi and B.valasiana - geom_col plot
+
+*B.burgdorferi plots*
+
+```{r}
+# Plot for all B.burgdorferi proteins
+pl1 <- protein_seq %>%
+  filter(Species == "B.burgdorferi") %>% 
+  split(.$ID) %>% 
+   
+  map(function(df3) {
+  protein_name <- unique(df3$ID) 
+  ggplot(df3, aes(x = Position, y = Count)) +
+    geom_col(alpha = 0.7, fill = "#F7BBB1") +
+    theme_minimal() +
+    scale_fill_viridis_d() +
+      labs(y = "Count of peptides", x = "Protein sequence length",
+         title = "Peptide Distribution in Protein Sequence",
+         subtitle = paste("ID:", protein_name),
+         fill = "Species") +
+    theme(plot.title = element_text(size = 10, face = "bold", colour = "#596d85", hjust = 0.5,vjust = 0.5),
+            plot.subtitle = element_text(size = 7, face = "italic",color = "#596d85"),
+            axis.title = element_text(size = 8, face = "bold", colour = "#596d85"),
+            axis.text = element_text(size = 6, face = "bold", colour = "#596d85"),
+            legend.text = element_text(size = 7, color = "#596d85"),
+            legend.title = element_text(size = 7,face = "bold", color = "#596d85")) +
+     scale_x_continuous(breaks = seq(0, max(df3$Position), by = 20)) +
+    scale_y_continuous(expand = c(0,0), breaks = seq(0, max(df3$Count), by = 5)) 
+  })
+pl1
