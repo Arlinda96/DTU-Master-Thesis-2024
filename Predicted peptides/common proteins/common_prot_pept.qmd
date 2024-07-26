@@ -1,0 +1,122 @@
+---
+title: "Common proteins-peptide distribution"
+format: html
+editor: visual
+---
+#Load libraries
+```{r}
+#| echo: false
+#| include: false
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+library(purrr)
+library(dplyr)
+```
+
+#Load dataset
+```{r}
+data <- read_excel("commonprot_burg_val.xlsx")
+```
+
+#Count of peptides
+```{r}
+# Filter out rows with NA Start_Position or End_Position
+data_filtered <- data %>%
+  filter(!is.na(Start_Position) & !is.na(End_Position))
+
+# Expand positions
+data_expanded <- data_filtered %>%
+  rowwise() %>%
+  mutate(Position = list(Start_Position:End_Position)) %>%
+  unnest(cols = c(Position))
+
+# Count occurrences
+position_counts <- data_expanded %>%
+  group_by(Position, Species, ID, Group) %>%
+  summarise(Count = n(), .groups = 'drop')
+
+# Replace NA counts with 0
+position_counts$Count[is.na(position_counts$Count)] <- 0
+
+
+# Final data frame
+protein_df2 <- position_counts
+```
+
+### Column plot for peptide distribution acrross the protein length (peptide location comparison)
+
+```{r}
+
+# B.burgdorferi and B.Valaisiana common proteins 
+
+  plot <- protein_df2 %>%
+  split(.$Group) %>%
+
+ 
+map(function(df) {
+protein_name <- unique(df$ID) 
+ggplot(df, 
+      aes(x = Position,
+          y = Count,
+          fill = Species)) +
+  geom_col(alpha = 0.7) +
+  theme_minimal() +
+scale_fill_viridis_d() +
+   scale_fill_manual(values = c("B.burgdorferi" = "#FC7634",
+                                "B.valaisiana" = "#1fd082")) +
+  labs(x = "Protein length", y = "Peptide count",
+       title = "Peptide Distribution across Protein Sequences",
+       subtitle = paste(protein_name),
+       fill = "Species") +
+  theme(
+  plot.title = element_text(size = 10,
+                            face = "bold",
+                            color = "#392d85",
+                            hjust = 0.5, vjust = 0.5),
+  plot.subtitle = element_text(size = 9,
+                               color = "#392d85"),
+    legend.position = "right",
+    legend.text = element_text(size = 8,
+                               color = "#596d85"),
+    legend.title = element_text(size = 7,
+                                color = "#392d85",
+                                face = "bold"),
+    axis.text.x = element_text(size = 8,
+                               color = "#596d85",
+                               face = "bold"),
+    axis.title.x = element_text(size = 8,
+                                color = "#392d85",
+                                face = "bold"),
+    axis.text.y = element_text(size = 8,
+                               color = "#392d85",
+                               face = "bold"),
+    axis.title.y = element_text(size = 8,
+                                color = "#392d85",
+                                face = "bold")) +
+   scale_x_continuous(breaks = seq(0, 300, by = 10)) +
+  scale_y_continuous(breaks = seq(0, 45, by = 5))
+})
+
+plot
+
+#Save plots
+plot1 <-plot[[1]]
+ggsave("output/plot1.pdf", plot1, width = 8, height = 5)
+
+plot2 <-plot[[2]]
+ggsave("output/plot2.pdf", plot2, width = 8, height = 5)
+
+plot3 <-plot[[3]]
+ggsave("output/plot3.pdf", plot3, width = 8, height = 5)
+
+plot4 <-plot[[4]]
+ggsave("output/plot4.pdf", plot4, width = 8, height = 5)
+
+plot5 <-plot[[5]]
+ggsave("output/plot5.pdf", plot5, width = 8, height = 5)
+```
+
+
+
+
