@@ -1,0 +1,53 @@
+---
+title: "Peptide frequency across proteins of Borrelia species"
+format: html
+editor: visual
+---
+#Peptide frequency plot for all proteins grouped by Borrelia species
+```{r}
+#Load dataset
+all_peptides <- read_excel("peptides_input/all_pep_pred.xlsx")
+
+all_peptides$Proteins <- factor(all_peptides$Proteins, levels = unique(all_peptides$Proteins))
+
+all_peptide_plot <- ggplot(data = all_peptides,
+       aes(x = Proteins,
+           y = Peptides_count,
+           fill = Species)) +
+  geom_col() +
+  theme_minimal() +
+  labs(x = "Proteins",
+       y = "Peptides",
+       title = "Peptide Frequency across Borrelia for HLA-DR/DP/DQ") +
+   scale_fill_manual(values = c("B.valaisiana" = "#1FD082",
+                                "B.burgdorferi" = "#F7BBB1",
+                                "B.afzelii" = "#F6D04D",
+                                "B.garinii" = "#FC7634" )) +
+  theme(
+    axis.text.x = element_text(size = 3.5,
+                               angle = 30),
+    axis.text.y = element_text(size = 6),
+    plot.title = element_text(size = 10,
+                              face = "bold",
+                              color = "#596d85",
+                              hjust = 0.5,vjust = 0.5),
+    axis.title.x = element_text(size = 8,
+                                colour = "#596d85", 
+                                face = "bold"),
+    axis.title.y = element_text(size = 8,
+                                colour = "#596d85",
+                                face = "bold"),
+    legend.title = element_text(size = 7,
+                                colour = "#596d85",
+                                face = "bold"),
+    legend.text = element_text(size = 6,
+                               colour = "#596d85")) +
+  scale_y_continuous(limits = c(0,45),
+                     breaks = seq(0, 100, by=5))
+
+all_peptide_plot  
+
+
+#Save plot
+ggsave("predicted_peptides/peptide_freq_all.pdf", all_peptide_plot, width = 8, height = 5)
+```
