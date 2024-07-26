@@ -1,0 +1,216 @@
+---
+title: "Comparative analysis of homologous sequences to B. burgdorferi"
+subtitle: "Using BLASTp identity scores"
+format: html
+editor: visual
+---
+
+#Load libraries
+```{r}
+#| echo: true
+#| include: false
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+library(purrr)
+library(ggridges)
+
+```
+
+#Load dataset with identity scores of homologous sequences to B.burgdorferi
+```{r}
+data <- read_excel("protein_identity.xlsx")
+
+```
+
+#Boxplot without connecting lines
+```{r}
+#Create boxplot
+box_plot <- ggplot(data = data,
+                   aes(x = Species,
+                       y = Identity_blast,
+                       color = Species)) +
+  geom_boxplot(alpha = 0.5) +
+  geom_jitter(width = 0.2,
+              aes(color = Species)) +
+  labs(title = "Identity Percentages to B.burgdorferi across other Borrelia species",
+       x = "Species Compared",
+       y = "Identity Percentage (%)",
+       fill = "Species") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10,
+                                  face = "bold",
+                                  colour = "#596d85",
+                                  hjust = 0.5,
+                                  vjust = 0.5),
+            plot.subtitle = element_text(size = 7,
+                                         face = "italic",
+                                         color = "#596d85"),
+            axis.title = element_text(size = 8,
+                                      face = "bold",
+                                      colour = "#596d85"),
+            axis.text = element_text(size = 7,
+                                     face = "bold",
+                                     colour = "#596d85"),
+            legend.text = element_text(size = 8,
+                                       color = "#596d85"),
+            legend.title = element_text(size = 8,
+                                        face = "bold",
+                                        color = "#596d85")) +
+  scale_fill_manual(values = c("B.garinii" = "#FC7634",
+                               "B.valaisiana" = "#1fd082",
+                               "B.afzelii" = "#2F3EEA")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 5))
+
+#Print plot
+box_plot
+
+#Save plot
+ggsave("boxplot_output/box_plot.pdf", plot = box_plot, width = 6, height = 4, dpi = 300)
+
+```
+
+#Boxplot with connecting lines
+```{r}
+#Creation of boxplot
+box_plot_lines <- ggplot(data = data,
+                   aes(x = Species,
+                       y = Identity_blast,
+                       fill = Species)) +
+  geom_boxplot(alpha = 0.5) +
+  geom_line(aes(group=protein),
+            position = position_dodge(0.2),
+            size = 0.01,
+            color = "black") +
+  geom_point(aes(group=protein,
+                 color = Species),
+             position = position_dodge(0.2))+
+  labs(title = "Identity Percentages to B.burgdorferi across other Borrelia species",
+       x = "Species Compared",
+       y = "Identity Percentage",
+       fill = "Species") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10,
+                                  face = "bold",
+                                  colour = "#596d85",
+                                  hjust = 0.5,
+                                  vjust = 0.5),
+            plot.subtitle = element_text(size = 7,
+                                         face = "italic",
+                                         color = "#596d85"),
+            axis.title = element_text(size = 8,
+                                      face = "bold",
+                                      colour = "#596d85"),
+            axis.text = element_text(size = 7,
+                                     face = "bold",
+                                     colour = "#596d85"),
+            legend.text = element_text(size = 8,
+                                       color = "#596d85"),
+            legend.title = element_text(size = 8,
+                                        face = "bold",
+                                        color = "#596d85")) +
+  scale_fill_manual(values = c("B.garinii" = "#FC7634",
+                               "B.valaisiana" = "#1fd082",
+                               "B.afzelii" = "#2F3EEA")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 5))
+
+
+box_plot_lines
+
+#Save plot
+ ggsave("boxplot_output/box_plot_with_lines.pdf", plot = box_plot_lines, width = 6, height = 4, dpi = 300)
+  
+```
+
+#Calculations
+```{r}
+#Calculation of median value for each species
+species_list <- unique(data$Borrelia)
+
+# Loop through each species and calculate the median value
+for (species in species_list) {
+  median_value <- data %>%
+    filter(Borrelia == species) %>%
+    summarise(md = median(Identity_blast, na.rm = TRUE)) }
+   
+
+#Calculation of the standard deviation for each combination of Species and protein
+sd <- data %>%
+  group_by(protein) %>%
+  summarise(sd_value = sd(Identity_blast, na.rm = TRUE), .groups = 'drop')
+
+#Print sd
+sd
+
+
+#Calculation of IQR range
+species_list <- unique(data$Borrelia)
+
+# Loop through each species and calculate IQR, Q1, and Q3 
+for (species in species_list) {
+  species_data <- data %>%
+    filter(Borrelia == species)
+  
+  values <- species_data$Identity_blast
+  
+  # Calculate IQR, Q1, and Q3
+  IQR_value <- IQR(values, na.rm = TRUE)
+  Q1 <- quantile(values, 0.25, na.rm = TRUE)
+  Q3 <- quantile(values, 0.75, na.rm = TRUE)
+}
+
+```
+
+#Highest diversity data based on SD values
+```{r}
+total <- full_join(data,sd) 
+
+
+filtered_box_plot <- ggplot(data = total,
+                   aes(x = Species,
+                       y = Identity_blast,
+                       color = Species)) +
+  geom_boxplot(alpha = 0.5) +
+  geom_line(data = subset(total,
+                          sd_value >=20),
+            aes(group=protein),
+            position = position_dodge(0.2),
+            size = 0.05,
+            color = "black") +
+  geom_point(aes(group=protein,
+                 color = Species),
+             position = position_dodge(0.2))+
+  labs(title = "Identity Percentages to B.burgdorferi across other Borrelia species",
+       x = "Species Compared",
+       y = "Identity Percentage (%)",
+       fill = "Species") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10,
+                                  face = "bold",
+                                  colour = "#596d85",
+                                  hjust = 0.5,
+                                  vjust = 0.5),
+            plot.subtitle = element_text(size = 7,
+                                         face = "italic",
+                                         color = "#596d85"),
+            axis.title = element_text(size = 8,
+                                      face = "bold",
+                                      colour = "#596d85"),
+            axis.text = element_text(size = 7,
+                                     face = "bold",
+                                     colour = "#596d85"),
+            legend.text = element_text(size = 8,
+                                       color = "#596d85"),
+            legend.title = element_text(size = 8,
+                                        face = "bold",
+                                        color = "#596d85")) +
+  scale_fill_manual(values = c("B.garinii" = "#FC7634",
+                               "B.valaisiana" = "#1fd082",
+                               "B.afzelii" = "#2F3EEA")) +
+  scale_y_continuous(breaks = seq(0, 100, by = 5))
+
+
+filtered_box_plot
+ ggsave("boxplot_output/filtered_box_plot_with_lines.pdf", plot = filtered_box_plot, width = 6, height = 4, dpi = 300)
+  
+```

@@ -35,15 +35,14 @@ library(Biostrings)
 
 ```{r}
 # Specify the directory containing the fasta files
-fasta_dir <- "ggmsa_input/"  # Replace with your folder path
+fasta_dir <- "ggmsa_input/" 
 
-# List all fasta files in the directory
+# All fasta files containing the protein sequences from all species
 fasta_files <- list.files(path = fasta_dir, pattern = "\\.fasta$", full.names = TRUE)
 
 # Loop through each fasta file
 for (fasta_file in fasta_files) {
   
-  # Read the sequences from the fasta file
   prot_sequences <- readAAStringSet(fasta_file)
   
   # Perform the multiple sequence alignment
@@ -52,7 +51,7 @@ for (fasta_file in fasta_files) {
   # Turn the alignment into a suitable format for ggmsa plot
   aligned_sequences <- as.character(alignment)
   
-  # Make alignment plot
+  # Alignment plot
   alignment_plot <- ggmsa::ggmsa(aligned_sequences, 
                                  start = NULL, end = NULL, 
                                  color = "Chemistry_AA",
@@ -67,10 +66,10 @@ for (fasta_file in fasta_files) {
                                  ref = names(prot_sequences[1])) +
                     theme(text = element_text(size = 6))
   
-  # Print the alignment plot
+  # Print the alignment plots
   print(alignment_plot)
   
-  # Save plot in pdf
+  # Save plots
   output_filename <- paste0("ggmsa_output/", sub(".fasta", "", basename(fasta_file)), ".pdf")
   ggsave(filename = output_filename, plot = alignment_plot, width = 10, height = 5)
 }
