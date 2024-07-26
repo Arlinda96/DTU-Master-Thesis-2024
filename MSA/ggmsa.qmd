@@ -5,6 +5,7 @@ editor: visual
 ---
 
 #Install packages
+
 ```{r}
 install.packages("ggmsa")
 install.packages("BiocManager")
@@ -20,6 +21,7 @@ system.file("tex", "texshade.sty", package="msa")
 ```
 
 #Load libraries
+
 ```{r}
 library(tidyverse)
 library(ggplot2)
@@ -30,9 +32,10 @@ library(Biostrings)
 ```
 
 #Multiple sequence alignment (MSA)
+
 ```{r}
 # Specify the directory containing the fasta files
-fasta_dir <- "DTU-Master-Thesis-2024/ggmsa_input"  # Replace with your folder path
+fasta_dir <- "ggmsa_input/"  # Replace with your folder path
 
 # List all fasta files in the directory
 fasta_files <- list.files(path = fasta_dir, pattern = "\\.fasta$", full.names = TRUE)
